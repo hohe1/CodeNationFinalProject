@@ -21,13 +21,6 @@ export default class GameCanvas extends Component{
                 totalFrame:0,
             },
             
-            getAppearance : ()=>{
-                return this.appearance
-            },
-
-            setAppearance : (p,v)=>{
-                this.appearance[p] = v
-            }
         }
 
         this.statAndStuff = {
@@ -41,7 +34,7 @@ export default class GameCanvas extends Component{
         this.sprites = {
             charWalk : {
                 img: new Image(),
-                totalFrame: 3, //4-1 we start counting at 0
+                totalFrame: 4, //just start count at 1 here
 
             }
 
@@ -49,6 +42,10 @@ export default class GameCanvas extends Component{
 
         }
         this.sprites.charWalk.img.src = "../../../pictures/walkSprite.png" //set the src of the img initialized ^
+
+        //set char appearance
+        this.mainCharStat.appearance.sprite = this.sprites.charWalk.img
+        this.mainCharStat.appearance.totalFrame = this.sprites.charWalk.totalFrame
 
         this.otherVar = {
             gameTick: 1000,
@@ -60,7 +57,14 @@ export default class GameCanvas extends Component{
             },
         }
         //-------methods-----------------
+        this.setSpriteForWalking = ()=>{
+            this.mainCharStat.appearance.sprite = this.sprites.charWalk.img
+            this.mainCharStat.appearance.totalFrame = this.sprites.charWalk.totalFrame
+            this.mainCharStat.appearance.frame += 1
+        } 
+
         this.moveChar = ()=>{
+
             if (this.otherVar.boardKeyState.downW === true){
                 this.mainCharStat.charPosition.y-=10;
             }
@@ -75,8 +79,9 @@ export default class GameCanvas extends Component{
     
             if (this.otherVar.boardKeyState.downD === true){
                 this.mainCharStat.charPosition.x+=10;
+                
             }
-
+            this.setSpriteForWalking()
         }
 
         //-------------------------
@@ -98,11 +103,19 @@ export default class GameCanvas extends Component{
                 contx.clearRect(0,0,350,350)//-contx.width,contx.height)
 
                 //console.log(contx)
-                contx.drawImage(this.sprites.charWalk.img, 0*128, 0*128,128,128,this.mainCharStat.charPosition.x, this.mainCharStat.charPosition.y,128,128)
+                contx.drawImage(
+                    this.mainCharStat.appearance.sprite,    //image
+                    (this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)*128,  //sx
+                    0*128,  //sy
+                    128,    //swidth
+                    128,    //sheight
+                    this.mainCharStat.charPosition.x,   //x
+                    this.mainCharStat.charPosition.y,   //y
+                    128,    //width
+                    128     //height
+                    )
                 this.moveChar()
-                
-
-
+                    //console.log(this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)
                 
 
             }
