@@ -3,9 +3,12 @@ import GameCanvas from './components/GameCanvas.js';
 import './App.css';
 
 function App() {
+  
+  
+
   return (
     <div className="App">
-      <GameCanvas />
+      <GameCanvas name="cba" />
     </div>
   );
 }
