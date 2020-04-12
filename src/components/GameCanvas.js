@@ -20,6 +20,8 @@ export default class GameCanvas extends Component{
                 sprite:null,
                 frame:0,
                 totalFrame:0,
+                resetAfterFinish : false,
+                resetToAfterFinish : null,
             },
             
         }
@@ -31,15 +33,20 @@ export default class GameCanvas extends Component{
             charWalk : {
                 img: new Image(),
                 totalFrame: 4, //just start count at 1 here
-
             },
 
+            charAtk1 : {
+                img: new Image(),
+                totalFrame: 7, //just start count at 1 here
+            },
             //mob sprties
             greenBoiWalk:{img: new Image(),totalFrame: 4,},
 
         }
         this.sprites.charWalk.img.src = "../../../pictures/walkSprite.png" //set the src of the img initialized ^
+        this.sprites.charAtk1.img.src = "../../../pictures/charAtk1Sprite.png"
         this.sprites.greenBoiWalk.img.src = "../../../pictures/walkSprite2.png"
+
 
         this.mobStat = { //spawn mobs using these stats
             greenBoi:{
@@ -58,15 +65,18 @@ export default class GameCanvas extends Component{
         //set char appearance
         this.mainCharStat.appearance.sprite = this.sprites.charWalk.img
         this.mainCharStat.appearance.totalFrame = this.sprites.charWalk.totalFrame
+        this.mainCharStat.appearance.resetToAfterFinish = this.sprites.charWalk // not add .img so can get frame also.
 
         this.otherVar = {
-            gameTick: 1000, //125 is pretty good 8fps
+            gameTick: 1250, //125 is pretty good 8fps
             gameTime: 0,
             boardKeyState:{
                 downW : false,
                 downA : false,
                 downS : false,
-                downD : false
+                downD : false,
+
+                downJ : false,
             },
         }
         //-------methods-----------------
@@ -76,25 +86,60 @@ export default class GameCanvas extends Component{
             this.mainCharStat.appearance.frame += 1
         } 
 
+        this.playSprite = (sheetName,target) => {
+            this[target].appearance.frame = 0
+            this[target].appearance.sprite = this.sprites[sheetName].img
+            this[target].appearance.totalFrame = this.sprites[sheetName].totalFrame
+            this[target].appearance.resetAfterFinish = true
+
+            //console.log(this[target].appearance.sprite)
+            //console.log(this[target].appearance.totalFrame)
+        }
+
+        this.checkForReset = (target) =>{ //checks for reset and loops sprite
+            if (this[target].appearance.resetAfterFinish === true){
+                //console.log("a")
+                console.log(this[target].appearance.frame)
+                if(this[target].appearance.totalFrame > this[target].appearance.frame){
+                    this[target].appearance.frame+=1 //enable later when 
+                }else{
+                    this[target].appearance.sprite = this[target].appearance.resetToAfterFinish.img
+                    this[target].appearance.totalFrame = this[target].appearance.resetToAfterFinish.totalFrame
+                    this[target].appearance.frame = 0
+                    this[target].appearance.resetAfterFinish=false
+                    
+
+                }
+            }
+
+        }
+
         this.moveChar = ()=>{
 
-            if (this.otherVar.boardKeyState.downW === true){
-                this.mainCharStat.charPosition.y-=10;
-            }
-            
-            if (this.otherVar.boardKeyState.downA === true){
-                this.mainCharStat.charPosition.x-=10;
-            }
-        
-            if (this.otherVar.boardKeyState.downS === true){
-                this.mainCharStat.charPosition.y+=10;
-            }
-    
-            if (this.otherVar.boardKeyState.downD === true){
-                this.mainCharStat.charPosition.x+=10;
+            if (this.otherVar.boardKeyState.downJ === true && this.mainCharStat.appearance.resetAfterFinish === false){ //false prevent this from excuting many time
+                this.playSprite("charAtk1","mainCharStat")
+
+            }else{
+
+                if (this.otherVar.boardKeyState.downW === true){
+                    this.mainCharStat.charPosition.y-=10;
+                }
                 
+                if (this.otherVar.boardKeyState.downA === true){
+                    this.mainCharStat.charPosition.x-=10;
+                }
+            
+                if (this.otherVar.boardKeyState.downS === true){
+                    this.mainCharStat.charPosition.y+=10;
+                }
+        
+                if (this.otherVar.boardKeyState.downD === true){
+                    this.mainCharStat.charPosition.x+=10;
+                    
+                }
+
+                //this.setSpriteForWalking()
             }
-            this.setSpriteForWalking()
         }
 
         this.appendMob = (canvasContex)=>{
@@ -133,6 +178,8 @@ export default class GameCanvas extends Component{
             mob.appearance.sprite = mob.sprites.walk.img
             mob.appearance.frame = 0
             mob.appearance.totalFrame = mob.sprites.walk.totalFrame
+            mob.appearance.resetAfterFinish = false
+            mob.appearance.resetToAfterFinish = mob.sprites.walk //.img left out intentionally
             
             // console.log(mob)
             //push mob in the array that stores mobs
@@ -176,7 +223,7 @@ export default class GameCanvas extends Component{
                 this.appendMob(contx)
                 this.moveChar() //moves charactor
                     //console.log(this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)
-                
+                this.checkForReset("mainCharStat") // check if the animation should reset to default animation
 
                 this.otherVar.gameTime += 1
                 
