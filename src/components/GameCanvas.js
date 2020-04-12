@@ -68,7 +68,7 @@ export default class GameCanvas extends Component{
         this.mainCharStat.appearance.resetToAfterFinish = this.sprites.charWalk // not add .img so can get frame also.
 
         this.otherVar = {
-            gameTick: 1250, //125 is pretty good 8fps
+            gameTick: 125, //125 is pretty good 8fps
             gameTime: 0,
             boardKeyState:{
                 downW : false,
@@ -123,21 +123,24 @@ export default class GameCanvas extends Component{
 
                 if (this.otherVar.boardKeyState.downW === true){
                     this.mainCharStat.charPosition.y-=10;
+                    this.mainCharStat.appearance.frame+=1
                 }
                 
                 if (this.otherVar.boardKeyState.downA === true){
                     this.mainCharStat.charPosition.x-=10;
+                    this.mainCharStat.appearance.frame+=1
                 }
             
                 if (this.otherVar.boardKeyState.downS === true){
                     this.mainCharStat.charPosition.y+=10;
+                    this.mainCharStat.appearance.frame+=1
                 }
         
                 if (this.otherVar.boardKeyState.downD === true){
                     this.mainCharStat.charPosition.x+=10;
-                    
-                }
+                    this.mainCharStat.appearance.frame+=1
 
+                }
                 //this.setSpriteForWalking()
             }
         }
