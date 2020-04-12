@@ -99,7 +99,7 @@ export default class GameCanvas extends Component{
         this.checkForReset = (target) =>{ //checks for reset and loops sprite
             if (this[target].appearance.resetAfterFinish === true){
                 //console.log("a")
-                console.log(this[target].appearance.frame)
+                //console.log(this[target].appearance.frame) //will print the frame of the current playing sprite
                 if(this[target].appearance.totalFrame > this[target].appearance.frame){
                     this[target].appearance.frame+=1 //enable later when 
                 }else{
@@ -118,6 +118,7 @@ export default class GameCanvas extends Component{
 
             if (this.otherVar.boardKeyState.downJ === true && this.mainCharStat.appearance.resetAfterFinish === false){ //false prevent this from excuting many time
                 this.playSprite("charAtk1","mainCharStat")
+                this.collisionDetection()
 
             }else{
 
@@ -160,6 +161,37 @@ export default class GameCanvas extends Component{
                     )
             })
         }
+
+        this.showHitBox = (ctx)=>{
+            ctx.beginPath();
+            ctx.lineWidth = "1";
+            ctx.strokeStyle = "red";
+            ctx.rect(this.mainCharStat.charPosition.x,this.mainCharStat.charPosition.y,128,128)//draw main char hitbox (not actually hit box, but is hit box if you put in the same value as collision Detection.)
+            ctx.rect(this.arrayOfMobs[0].charPosition.x,this.arrayOfMobs[0].charPosition.y,128,128)
+            ctx.stroke();
+        }
+
+        this.collisionDetection = ()=>{ //assume 128^2
+
+            //check for collison if charCenter.x + 64 > mob x or charCenter.x - 64 < mob x + 128, then check the same for y
+            this.arrayOfMobs.forEach((v,i)=>{
+                if(v.charPosition.x < this.mainCharStat.charPosition.x + 128 && v.charPosition.x+128 > this.mainCharStat.charPosition.x){//x works fine
+                    //console.log("x hit")
+                    if(v.charPosition.y < this.mainCharStat.charPosition.y + 128 && v.charPosition.y+128 > this.mainCharStat.charPosition.y){
+
+                        //console.log("y hit")
+                        console.log(v.name+" got hit")
+                    }
+                    //not colliding
+                    
+                }
+
+            })
+
+
+        }
+
+        this.checkForMobDie = ()=>{}
         //--------Mob constructor------------
         this.MakemMob = (mobType,spawnX,spawnY)=>{
             let mob = {}
@@ -198,17 +230,17 @@ export default class GameCanvas extends Component{
             contx = this.myRef.current.getContext("2d")
             // console.log( contx)
 
-            this.myRef.current.height = 350//700
-            this.myRef.current.width = 350//900
+            this.myRef.current.height = 500//700
+            this.myRef.current.width = 500//900
 
-            this.MakemMob("greenBoi",100,0)
+            this.MakemMob("greenBoi",200,200)
         }
 
         setInterval(()=>{ //<------stuff are done here, since this is what redraws the canvas every so often
             //console.log(typeof contx) //<-- prints 2 things 1. the actual canvas obj 2. undefine ???
 
             if(typeof contx !== 'undefined'){ //<--- 'filters out' the above
-                contx.clearRect(0,0,350,350)//-contx.width,contx.height)
+                contx.clearRect(0,0,500,500)//-contx.width,contx.height)
 
                 //console.log(contx)
                 contx.drawImage(
@@ -227,6 +259,10 @@ export default class GameCanvas extends Component{
                 this.moveChar() //moves charactor
                     //console.log(this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)
                 this.checkForReset("mainCharStat") // check if the animation should reset to default animation
+
+                this.showHitBox(contx)
+
+
 
                 this.otherVar.gameTime += 1
                 
