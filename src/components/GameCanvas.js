@@ -23,7 +23,12 @@ export default class GameCanvas extends Component{
                 resetAfterFinish : false,
                 resetToAfterFinish : null,
             },
-            
+            stat:{
+                hp:10,
+                mp:10,
+                atk: 10,
+                wlkSpd: 10, // not in use at the moment
+            }
         }
 
         this.arrayOfMobs = [] //stores mobs obj that currently exist.
@@ -50,7 +55,7 @@ export default class GameCanvas extends Component{
 
         this.mobStat = { //spawn mobs using these stats
             greenBoi:{
-                hp:10,
+                hp:125,
                 atk:1,
                 wlkSpd:3,
                 skills:[],
@@ -172,7 +177,6 @@ export default class GameCanvas extends Component{
         }
 
         this.collisionDetection = ()=>{ //assume 128^2
-
             //check for collison if charCenter.x + 64 > mob x or charCenter.x - 64 < mob x + 128, then check the same for y
             this.arrayOfMobs.forEach((v,i)=>{
                 if(v.charPosition.x < this.mainCharStat.charPosition.x + 128 && v.charPosition.x+128 > this.mainCharStat.charPosition.x){//x works fine
@@ -180,15 +184,22 @@ export default class GameCanvas extends Component{
                     if(v.charPosition.y < this.mainCharStat.charPosition.y + 128 && v.charPosition.y+128 > this.mainCharStat.charPosition.y){
 
                         //console.log("y hit")
-                        console.log(v.name+" got hit")
+                        v.hp -= this.mainCharStat.stat.atk
+                        console.log(v.hp)
                     }
                     //not colliding
                     
                 }
 
             })
+        }
 
-
+        this.clearDeadMob = () => {
+            this.arrayOfMobs.forEach((v,i)=>{
+                if (v.hp < 0){
+                    this.arrayOfMobs.splice(i,1)
+                }
+            })
         }
 
         this.checkForMobDie = ()=>{}
@@ -260,10 +271,10 @@ export default class GameCanvas extends Component{
                     //console.log(this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)
                 this.checkForReset("mainCharStat") // check if the animation should reset to default animation
 
-                this.showHitBox(contx)
+                //this.showHitBox(contx)
 
 
-
+                this.clearDeadMob()
                 this.otherVar.gameTime += 1
                 
             }
