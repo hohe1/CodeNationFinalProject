@@ -1,5 +1,10 @@
 import React, { Component, useState } from 'react'
 
+
+const constantVar = {
+
+}
+
 export default class GameCanvas extends Component{
     constructor(props){
         super(props)
@@ -46,23 +51,51 @@ export default class GameCanvas extends Component{
             },
             //mob sprties
             greenBoiWalk:{img: new Image(),totalFrame: 4,},
+            greenBoiAtk:{img: new Image(),totalFrame: 7,},
 
         }
         this.sprites.charWalk.img.src = "../../../pictures/walkSprite.png" //set the src of the img initialized ^
         this.sprites.charAtk1.img.src = "../../../pictures/charAtk1Sprite.png"
         this.sprites.greenBoiWalk.img.src = "../../../pictures/walkSprite2.png"
+        this.sprites.greenBoiAtk.img.src = "../../../pictures/GreenAtk1Sprite.png"
 
 
         this.mobStat = { //spawn mobs using these stats
             greenBoi:{
                 hp:125,
                 atk:1,
-                wlkSpd:3,
+                wlkSpd:5,
                 skills:[],
                 sprites:{
                     walk: this.sprites.greenBoiWalk, //need to do walk.img to get the img.
                     attack:null,
-                }
+                },
+                behavior: (self)=>{
+                    //move towards player: set the position so next time it renders closer to the player
+                    
+                    //wait some time
+                    
+                    //still within attack range? (64px?)
+                    if(self.charPosition.x < this.mainCharStat.charPosition.x + 128 && self.charPosition.x+128 > this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
+                        if(self.charPosition.y < this.mainCharStat.charPosition.y + 128 && self.charPosition.y+128 > this.mainCharStat.charPosition.y){
+                            //this.mainCharStat.hp -= this.mainCharStat.stat.atk
+                            //this.playSprite("charAtk1",self)
+                            this.mobSpritePlay(self,"greenBoiAtk")
+                        }else{
+                            //still not in range, walk
+                            this.mobWalkSprite(self)
+                        }
+                    }else{
+                     //else not in range. Start walking
+                     this.mobWalkSprite(self)
+                    }
+                    //attack
+
+                    //wait for cd
+
+                    //repaet until died
+                },
+                
             },
             mech:{}
         }
@@ -99,6 +132,40 @@ export default class GameCanvas extends Component{
 
             //console.log(this[target].appearance.sprite)
             //console.log(this[target].appearance.totalFrame)
+        }
+
+        this.mobSpritePlay = (target,sheetName)=>{ //target is self
+            if(target.appearance.resetAfterFinish === false){
+                target.appearance.frame = 0
+                target.appearance.sprite = this.sprites[sheetName].img
+                target.appearance.totalFrame = this.sprites[sheetName].totalFrame
+                target.appearance.resetAfterFinish = true
+            }else{
+                target.appearance.frame += 1
+
+            }
+        }
+
+        this.mobWalkSprite=(target)=>{ //target is self
+            target.appearance.resetAfterFinish = false
+            target.appearance.sprite = this.mobStat[target.name].sprites.walk.img
+            target.appearance.totalFrame = this.mobStat[target.name].sprites.walk.totalFrame
+            target.appearance.frame += 1
+
+            if(target.charPosition.x >= this.mainCharStat.charPosition.x + 94){ //if not within x range   Main +128 Self  //128 and the boxes are touching(pretty much)
+                target.charPosition.x -= target.wlkSpd                                 //put 94 instead of 128 because it moves mov closer
+            }else if(target.charPosition.x+94 <= this.mainCharStat.charPosition.x){
+                target.charPosition.x += target.wlkSpd
+            }
+            
+            if(target.charPosition.y !== this.mainCharStat.charPosition.y){
+                if(target.charPosition.y >= this.mainCharStat.charPosition.y){
+                    target.charPosition.y -= target.wlkSpd
+                }else if(target.charPosition.x <= this.mainCharStat.charPosition.y){
+                    target.charPosition.y += target.wlkSpd
+                }
+            }
+
         }
 
         this.checkForReset = (target) =>{ //checks for reset and loops sprite
@@ -155,7 +222,7 @@ export default class GameCanvas extends Component{
             this.arrayOfMobs.forEach((v,i)=>{
                 canvasContex.drawImage(
                     v.appearance.sprite,   //img
-                    0,    //sx
+                    (v.appearance.frame % v.appearance.totalFrame)*128,    //sx
                     0,    //sy
                     128,    //swidth
                     128,    //sheight
@@ -167,7 +234,13 @@ export default class GameCanvas extends Component{
             })
         }
 
-        this.showHitBox = (ctx)=>{
+        this.moveMobs =()=>{
+            this.arrayOfMobs.forEach((v,i)=>{
+                v.behavior(v)
+            })
+        }
+
+        this.showHitBox = (ctx)=>{ //will crash if you kill a mob, there isnt a null check
             ctx.beginPath();
             ctx.lineWidth = "1";
             ctx.strokeStyle = "red";
@@ -182,7 +255,6 @@ export default class GameCanvas extends Component{
                 if(v.charPosition.x < this.mainCharStat.charPosition.x + 128 && v.charPosition.x+128 > this.mainCharStat.charPosition.x){//x works fine
                     //console.log("x hit")
                     if(v.charPosition.y < this.mainCharStat.charPosition.y + 128 && v.charPosition.y+128 > this.mainCharStat.charPosition.y){
-
                         //console.log("y hit")
                         v.hp -= this.mainCharStat.stat.atk
                         console.log(v.hp)
@@ -226,6 +298,8 @@ export default class GameCanvas extends Component{
             mob.appearance.totalFrame = mob.sprites.walk.totalFrame
             mob.appearance.resetAfterFinish = false
             mob.appearance.resetToAfterFinish = mob.sprites.walk //.img left out intentionally
+
+            mob.behavior = this.mobStat[mobType].behavior
             
             // console.log(mob)
             //push mob in the array that stores mobs
@@ -266,7 +340,8 @@ export default class GameCanvas extends Component{
                     128     //height
                     )
                 
-                this.appendMob(contx)
+                this.appendMob(contx) //move mob moves the mob
+                this.moveMobs() //is in charge mob behavior, doesn't move the mob
                 this.moveChar() //moves charactor
                     //console.log(this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)
                 this.checkForReset("mainCharStat") // check if the animation should reset to default animation

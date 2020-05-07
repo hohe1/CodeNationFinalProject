@@ -3,12 +3,14 @@ import GameCanvas from './components/GameCanvas.js';
 import './App.css';
 
 function App() {
-  
+  let state={
+    phase:"game"
+  }
   
 
   return (
     <div className="App">
-      <GameCanvas name="cba" />
+      <GameCanvas name={state.phase} />
     </div>
   );
 }
