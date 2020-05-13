@@ -1,5 +1,6 @@
 import React from 'react';
 import GameCanvas from './components/GameCanvas.js';
+import Targetbar from './components/TargetBar.js';
 import './App.css';
 
 function App() {
@@ -10,7 +11,9 @@ function App() {
 
   return (
     <div className="App">
+      {/* <Targetbar/> */}
       <GameCanvas name={state.phase} />
+      
     </div>
   );
 }

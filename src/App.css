@@ -7,11 +7,37 @@
   pointer-events: none;
 }
 
-.can{
-  border:red solid 1px;
-  
+.canHolder{
+  /* display: flex;
+  justify-content: center; */
 }
 
+.can{
+  border:red solid 1px;
+  margin-top:2vh;
+  
+}
+/* target bar stuff */
+.TargetBar{
+  margin: auto;
+  width:50%;
+  border:red solid 1px;
+}
+.nameMob{
+  border:1px red solid;
+  box-sizing: border-box;
+}
+.hpHolder{
+  height:3vh;
+  border:1px red solid;
+  box-sizing: border-box;
+  background-color: darkred;
+}
+.hp{ /*the actual bar*/
+  height:100%;
+  width:100%;
+  background-color: red;
+}
 
 
 /* @media (prefers-reduced-motion: no-preference) {

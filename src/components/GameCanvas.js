@@ -1,5 +1,5 @@
 import React, { Component, useState } from 'react'
-
+import Targetbar from './TargetBar.js';
 
 const constantVar = {
 
@@ -11,7 +11,7 @@ export default class GameCanvas extends Component{
         this.myRef = React.createRef();
 
         this.state = {
-            
+            mobBeingHit: null,
             a: 0
         }
         //-------var---------------
@@ -258,6 +258,9 @@ export default class GameCanvas extends Component{
                         //console.log("y hit")
                         v.hp -= this.mainCharStat.stat.atk
                         console.log(v.hp)
+
+                        this.setState({"mobBeingHit":v})
+                        console.log(this.state.mobBeingHit)
                     }
                     //not colliding
                     
@@ -270,6 +273,10 @@ export default class GameCanvas extends Component{
             this.arrayOfMobs.forEach((v,i)=>{
                 if (v.hp < 0){
                     this.arrayOfMobs.splice(i,1)
+                    
+                    if(this.state.mobBeingHit === v){
+                        this.setState({"mobBeingHit":null})
+                    }
                 }
             })
         }
@@ -279,6 +286,7 @@ export default class GameCanvas extends Component{
         this.MakemMob = (mobType,spawnX,spawnY)=>{
             let mob = {}
             mob.name = mobType
+            mob.maxHp = this.mobStat[mobType].hp
             mob.hp = this.mobStat[mobType].hp
             mob.atk = this.mobStat[mobType].atk
             mob.wlkSpd = this.mobStat[mobType].wlkSpd
@@ -316,7 +324,7 @@ export default class GameCanvas extends Component{
             // console.log( contx)
 
             this.myRef.current.height = 500//700
-            this.myRef.current.width = 500//900
+            this.myRef.current.width = 700//900
 
             this.MakemMob("greenBoi",200,200)
         }
@@ -325,9 +333,10 @@ export default class GameCanvas extends Component{
             //console.log(typeof contx) //<-- prints 2 things 1. the actual canvas obj 2. undefine ???
 
             if(typeof contx !== 'undefined'){ //<--- 'filters out' the above
-                contx.clearRect(0,0,500,500)//-contx.width,contx.height)
+                contx.clearRect(0,0,700,500)//-contx.width,contx.height)
 
                 //console.log(contx)
+
                 contx.drawImage(
                     this.mainCharStat.appearance.sprite,    //image
                     (this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)*128,  //sx
@@ -340,6 +349,8 @@ export default class GameCanvas extends Component{
                     128     //height
                     )
                 
+                
+
                 this.appendMob(contx) //move mob moves the mob
                 this.moveMobs() //is in charge mob behavior, doesn't move the mob
                 this.moveChar() //moves charactor
@@ -421,7 +432,10 @@ export default class GameCanvas extends Component{
             
 
        // <div onKeyDown={(e)=>(this.keyHandle(e))}>
-       <div>
+       <div className="canholder">
+
+            <Targetbar target={this.state.mobBeingHit}/>
+
             
             {/* <canvas className="can" ref={(c) => this.canvasContext = c.getContext('2d')}/> */}
             <canvas className="can" ref={this.myRef} onLoad={()=>console.log("loaded")} />
