@@ -10,20 +10,37 @@ export default class SelfBar extends Component{
         }
     }
     render(){            
-        if(this.props.target === null){ //when you're hitting anything
-            return(
-                <div className="charUI">
-                    <div className="yourBars">
-                        <div className="hpHolderChar"><div className="hpChar"></div></div>
-                        <div className="mpHolderChar"><div className="mpChar"></div></div>
-                        <div className="defHolderChar"><div className="defChar"></div></div>
+            let hpWidth = this.props.hp / this.props.mhp
+            let toPercentHp = hpWidth*100 + "%"
+
+            let mpWidth = this.props.mp / this.props.mmp
+            let toPercentMp = mpWidth*100 + "%"
+
+            let defArr = []
+            for(let i=0;i<this.props.def;i++){
+                defArr.push(<div className="def" key={i+"def"}></div>)
+            }
+
+        return(
+            <div className="charUI">
+                <div className="yourBars">
+
+                    <div className="hpHolderChar">
+                        <div className="hpChar" style={{width:toPercentHp}}></div>
                     </div>
 
-                    <div className="skills">
-
+                    <div className="mpHolderChar">
+                        <div className="mpChar" style={{width:toPercentMp}}></div>
                     </div>
+
+                    <div className="defHolderChar">
+                        {defArr}
+                    </div>
+
                 </div>
-            )
-        }
+                    <div className="skills">
+                </div>
+            </div>
+        )
     }
 }

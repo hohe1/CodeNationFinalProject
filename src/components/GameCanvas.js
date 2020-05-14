@@ -1,5 +1,6 @@
 import React, { Component, useState } from 'react'
 import Targetbar from './TargetBar.js';
+import SelfBar from './SelfBar.js';
 
 const constantVar = {
 
@@ -12,7 +13,9 @@ export default class GameCanvas extends Component{
 
         this.state = {
             mobBeingHit: null,
-            a: 0
+            charHp: 250,
+            charMp: 250,
+            charDef: 3
         }
         //-------var---------------
         this.mainCharStat = { 
@@ -29,8 +32,8 @@ export default class GameCanvas extends Component{
                 resetToAfterFinish : null,
             },
             stat:{
-                hp:10,
-                mp:10,
+                maxhp:250, 
+                maxmp:250, 
                 atk: 10,
                 wlkSpd: 10, // not in use at the moment
             }
@@ -63,9 +66,10 @@ export default class GameCanvas extends Component{
         this.mobStat = { //spawn mobs using these stats
             greenBoi:{
                 hp:125,
-                atk:1,
+                atk:10,
                 wlkSpd:5,
                 skills:[],
+                isAttking: false,
                 sprites:{
                     walk: this.sprites.greenBoiWalk, //need to do walk.img to get the img.
                     attack:null,
@@ -76,23 +80,33 @@ export default class GameCanvas extends Component{
                     //wait some time
                     
                     //still within attack range? (64px?)
-                    if(self.charPosition.x < this.mainCharStat.charPosition.x + 128 && self.charPosition.x+128 > this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
-                        if(self.charPosition.y < this.mainCharStat.charPosition.y + 128 && self.charPosition.y+128 > this.mainCharStat.charPosition.y){
+                    if(self.charPosition.x < this.mainCharStat.charPosition.x + 50 && self.charPosition.x+50 > this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
+                        if(self.charPosition.y < this.mainCharStat.charPosition.y + 50 && self.charPosition.y+50 > this.mainCharStat.charPosition.y){  //need to change mobwalksprite so he will get close enough
                             //this.mainCharStat.hp -= this.mainCharStat.stat.atk
                             //this.playSprite("charAtk1",self)
-                            this.mobSpritePlay(self,"greenBoiAtk")
+                            this.mobSpritePlay(self,"greenBoiAtk") //attack begin
+
+                            if(!self.isAttking){ //only attaks once per animation
+                                this.setState({"charHp": this.state.charHp - self.atk })
+                                self.isAttking = true
+                            }
+                                
                         }else{
                             //still not in range, walk
-                            this.mobWalkSprite(self)
+                            this.mobWalkSprite(self,49)
                         }
                     }else{
                      //else not in range. Start walking
-                     this.mobWalkSprite(self)
+                     this.mobWalkSprite(self,49)
                     }
-                    //attack
+                    
 
                     //wait for cd
 
+                    //reset isAttacking
+                    if(self.appearance.frame % self.appearance.totalFrame === 0){
+                        self.isAttking = false
+                    }
                     //repaet until died
                 },
                 
@@ -146,15 +160,15 @@ export default class GameCanvas extends Component{
             }
         }
 
-        this.mobWalkSprite=(target)=>{ //target is self
+        this.mobWalkSprite=(target,distanceFromChar)=>{ //target is self
             target.appearance.resetAfterFinish = false
             target.appearance.sprite = this.mobStat[target.name].sprites.walk.img
             target.appearance.totalFrame = this.mobStat[target.name].sprites.walk.totalFrame
             target.appearance.frame += 1
 
-            if(target.charPosition.x >= this.mainCharStat.charPosition.x + 94){ //if not within x range   Main +128 Self  //128 and the boxes are touching(pretty much)
-                target.charPosition.x -= target.wlkSpd                                 //put 94 instead of 128 because it moves mov closer
-            }else if(target.charPosition.x+94 <= this.mainCharStat.charPosition.x){
+            if(target.charPosition.x >= this.mainCharStat.charPosition.x + distanceFromChar){ //if not within x range   Main +128 Self  //128 and the boxes are touching(pretty much)
+                target.charPosition.x -= target.wlkSpd                                 //put 94 instead of 128 because it mob walk closer
+            }else if(target.charPosition.x+distanceFromChar <= this.mainCharStat.charPosition.x){
                 target.charPosition.x += target.wlkSpd
             }
             
@@ -435,14 +449,19 @@ export default class GameCanvas extends Component{
        <div className="canholder">
 
             <Targetbar target={this.state.mobBeingHit}/>
-
-            
             {/* <canvas className="can" ref={(c) => this.canvasContext = c.getContext('2d')}/> */}
             <canvas className="can" ref={this.myRef} onLoad={()=>console.log("loaded")} />
             {/* <button onClick={()=>this.setUpCanvasAndDrawPicture()}>aaa</button> */}
             {/* use below div to test if path is good */}
             {/* <img src="../../../pictures/walkSprite.png"></img> */}
-            <h1>aaaa{this.state.a}</h1>
+            {/* <h1>aaaa{this.state.a}</h1> */}
+            <SelfBar 
+                def={this.state.charDef} 
+                hp={this.state.charHp} 
+                mp={this.state.charMp}
+                mhp={this.mainCharStat.stat.maxhp}
+                mmp={this.mainCharStat.stat.maxmp}
+            />
 
         </div>
     )}
