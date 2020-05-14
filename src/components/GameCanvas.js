@@ -36,6 +36,10 @@ export default class GameCanvas extends Component{
                 maxmp:250, 
                 atk: 10,
                 wlkSpd: 10, // not in use at the moment
+                moveSet:0,
+                knockBack: 8,
+                isBlocking: false, //unused, use downK instead
+                
             }
         }
 
@@ -52,6 +56,21 @@ export default class GameCanvas extends Component{
                 img: new Image(),
                 totalFrame: 7, //just start count at 1 here
             },
+
+            charAtk2 : {
+                img: new Image(),
+                totalFrame: 6, //just start count at 1 here
+            },
+
+            charAtk3 : {
+                img: new Image(),
+                totalFrame: 5, //just start count at 1 here
+            },
+
+            charBlock :{
+                img: new Image(),
+                totalFrame: 1, //just start count at 1 here
+            },
             //mob sprties
             greenBoiWalk:{img: new Image(),totalFrame: 4,},
             greenBoiAtk:{img: new Image(),totalFrame: 7,},
@@ -59,6 +78,10 @@ export default class GameCanvas extends Component{
         }
         this.sprites.charWalk.img.src = "../../../pictures/walkSprite.png" //set the src of the img initialized ^
         this.sprites.charAtk1.img.src = "../../../pictures/charAtk1Sprite.png"
+        this.sprites.charAtk2.img.src = "../../../pictures/charAtk2Sprite.png"
+        this.sprites.charAtk3.img.src = "../../../pictures/charAtk3Sprite.png"
+        this.sprites.charBlock.img.src = "../../../pictures/mainChar_block.png"
+
         this.sprites.greenBoiWalk.img.src = "../../../pictures/walkSprite2.png"
         this.sprites.greenBoiAtk.img.src = "../../../pictures/GreenAtk1Sprite.png"
 
@@ -70,6 +93,7 @@ export default class GameCanvas extends Component{
                 wlkSpd:5,
                 skills:[],
                 isAttking: false,
+                cd: 14,
                 sprites:{
                     walk: this.sprites.greenBoiWalk, //need to do walk.img to get the img.
                     attack:null,
@@ -80,15 +104,20 @@ export default class GameCanvas extends Component{
                     //wait some time
                     
                     //still within attack range? (64px?)
-                    if(self.charPosition.x < this.mainCharStat.charPosition.x + 50 && self.charPosition.x+50 > this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
-                        if(self.charPosition.y < this.mainCharStat.charPosition.y + 50 && self.charPosition.y+50 > this.mainCharStat.charPosition.y){  //need to change mobwalksprite so he will get close enough
+                    if(self.charPosition.x <= this.mainCharStat.charPosition.x + 50 && self.charPosition.x+50 >= this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
+                        if(self.charPosition.y <= this.mainCharStat.charPosition.y + 50 && self.charPosition.y+50 >= this.mainCharStat.charPosition.y){  //need to change mobwalksprite so he will get close enough
                             //this.mainCharStat.hp -= this.mainCharStat.stat.atk
                             //this.playSprite("charAtk1",self)
                             this.mobSpritePlay(self,"greenBoiAtk") //attack begin
 
-                            if(!self.isAttking){ //only attaks once per animation
-                                this.setState({"charHp": this.state.charHp - self.atk })
+                            if(!self.isAttking && self.atkCd === 0 && self.appearance.frame%self.appearance.totalFrame === 3){ //only attaks once per animation
+                                if(this.otherVar.boardKeyState.downK && this.state.charDef > 0){ // if player is holding down k key, aka if blocking
+                                    this.setState({"charDef": this.state.charDef - 1 })  //player blocked attack
+                                }else{
+                                    this.setState({"charHp": this.state.charHp - self.atk })  //player gets hurt
+                                }
                                 self.isAttking = true
+                                self.atkCd = self.cd
                             }
                                 
                         }else{
@@ -102,7 +131,13 @@ export default class GameCanvas extends Component{
                     
 
                     //wait for cd
-
+                    if(self.atkCd > 0){
+                        self.atkCd -= 1
+                        if (self.appearance.frame % self.appearance.totalFrame === 0){
+                            self.appearance.frame = 0
+                            this.mobWalkSprite(self,49)
+                        }
+                    }
                     //reset isAttacking
                     if(self.appearance.frame % self.appearance.totalFrame === 0){
                         self.isAttking = false
@@ -129,8 +164,14 @@ export default class GameCanvas extends Component{
                 downD : false,
 
                 downJ : false,
+                downK : false,
             },
+            wound : new Image(),
+            woundDisappearCd: 0,
+
         }
+        this.otherVar.wound.src = "../../../pictures/wound.png"
+
         //-------methods-----------------
         this.setSpriteForWalking = ()=>{
             this.mainCharStat.appearance.sprite = this.sprites.charWalk.img
@@ -200,12 +241,35 @@ export default class GameCanvas extends Component{
 
         }
 
-        this.moveChar = ()=>{
+        this.moveChar = (contex)=>{ //much public contex yes, very secure /s
 
             if (this.otherVar.boardKeyState.downJ === true && this.mainCharStat.appearance.resetAfterFinish === false){ //false prevent this from excuting many time
-                this.playSprite("charAtk1","mainCharStat")
-                this.collisionDetection()
 
+                switch(this.mainCharStat.moveSet){
+                    case 1:
+                        this.playSprite("charAtk2","mainCharStat")
+                        this.mainCharStat.moveSet += 1
+                        this.mainCharStat.stat.knockBack = 40
+                    break;
+                    case 2:
+                        this.playSprite("charAtk3","mainCharStat")
+                        this.mainCharStat.moveSet += 1
+                        this.mainCharStat.stat.knockBack = 10
+                        this.mainCharStat.stat.atk = 20
+                    break;
+                    default: //aka case 0
+                        this.playSprite("charAtk1","mainCharStat")
+                        this.mainCharStat.moveSet = 1 //since you just played case 0, set case to 1
+                        this.mainCharStat.stat.knockBack = 10
+                        this.mainCharStat.stat.atk = 10
+                }
+
+                this.collisionDetection(contex)
+            
+                
+            }else if(this.otherVar.boardKeyState.downK === true){
+                this.playSprite("charBlock","mainCharStat")
+                
             }else{
 
                 if (this.otherVar.boardKeyState.downW === true){
@@ -263,7 +327,7 @@ export default class GameCanvas extends Component{
             ctx.stroke();
         }
 
-        this.collisionDetection = ()=>{ //assume 128^2
+        this.collisionDetection = (contex)=>{ //assume 128^2
             //check for collison if charCenter.x + 64 > mob x or charCenter.x - 64 < mob x + 128, then check the same for y
             this.arrayOfMobs.forEach((v,i)=>{
                 if(v.charPosition.x < this.mainCharStat.charPosition.x + 128 && v.charPosition.x+128 > this.mainCharStat.charPosition.x){//x works fine
@@ -271,7 +335,21 @@ export default class GameCanvas extends Component{
                     if(v.charPosition.y < this.mainCharStat.charPosition.y + 128 && v.charPosition.y+128 > this.mainCharStat.charPosition.y){
                         //console.log("y hit")
                         v.hp -= this.mainCharStat.stat.atk
-                        console.log(v.hp)
+                        //console.log(v.hp)
+                        v.charPosition.x += this.mainCharStat.stat.knockBack
+
+                       
+                        contex.drawImage(this.otherVar.wound,
+                            v.charPosition.x-32-Math.floor(Math.random()*32), 
+                            v.charPosition.y+32+Math.floor(Math.random()*32),
+                            128+Math.floor(Math.random()*128),
+                            32+Math.floor(Math.random()*32)
+                        )
+
+                        //restore block capablitiy
+                        if(this.state.charDef <3){
+                            this.setState({"charDef":this.state.charDef+=1})
+                        }
 
                         this.setState({"mobBeingHit":v})
                         console.log(this.state.mobBeingHit)
@@ -305,6 +383,8 @@ export default class GameCanvas extends Component{
             mob.atk = this.mobStat[mobType].atk
             mob.wlkSpd = this.mobStat[mobType].wlkSpd
             mob.skills = this.mobStat[mobType].skills
+            mob.cd = this.mobStat[mobType].cd
+            mob.atkCd = 0
 
             mob.sprites = {}
             mob.sprites.walk = this.mobStat[mobType].sprites.walk
@@ -363,11 +443,10 @@ export default class GameCanvas extends Component{
                     128     //height
                     )
                 
-                
 
                 this.appendMob(contx) //move mob moves the mob
                 this.moveMobs() //is in charge mob behavior, doesn't move the mob
-                this.moveChar() //moves charactor
+                this.moveChar(contx) //moves charactor
                     //console.log(this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)
                 this.checkForReset("mainCharStat") // check if the animation should reset to default animation
 
