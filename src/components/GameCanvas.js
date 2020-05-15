@@ -38,12 +38,13 @@ export default class GameCanvas extends Component{
                 wlkSpd: 10, // not in use at the moment
                 moveSet:0,
                 knockBack: 8,
-                isBlocking: false, //unused, use downK instead
+                Lcharge: 0,
                 
             }
         }
 
         this.arrayOfMobs = [] //stores mobs obj that currently exist.
+        this.arrayOfProjectiles = []
 
         this.sprites = {
             //player's character sprites
@@ -67,10 +68,13 @@ export default class GameCanvas extends Component{
                 totalFrame: 5, //just start count at 1 here
             },
 
-            charBlock :{
+            charBlock : {
                 img: new Image(),
                 totalFrame: 1, //just start count at 1 here
             },
+            charDied : {img: new Image(),totalFrame: 1},
+            //projectiles
+            swordWave:{img: new Image(),totalFrame: 1},
             //mob sprties
             greenBoiWalk:{img: new Image(),totalFrame: 4,},
             greenBoiAtk:{img: new Image(),totalFrame: 7,},
@@ -81,6 +85,9 @@ export default class GameCanvas extends Component{
         this.sprites.charAtk2.img.src = "../../../pictures/charAtk2Sprite.png"
         this.sprites.charAtk3.img.src = "../../../pictures/charAtk3Sprite.png"
         this.sprites.charBlock.img.src = "../../../pictures/mainChar_block.png"
+        this.sprites.charDied.img.src = "../../../pictures/mainChar_Died.png"
+
+        this.sprites.swordWave.img.src = "../../../pictures/swordWave.png"
 
         this.sprites.greenBoiWalk.img.src = "../../../pictures/walkSprite2.png"
         this.sprites.greenBoiAtk.img.src = "../../../pictures/GreenAtk1Sprite.png"
@@ -88,7 +95,7 @@ export default class GameCanvas extends Component{
 
         this.mobStat = { //spawn mobs using these stats
             greenBoi:{
-                hp:125,
+                hp:250,
                 atk:10,
                 wlkSpd:5,
                 skills:[],
@@ -146,8 +153,47 @@ export default class GameCanvas extends Component{
                 },
                 
             },
-            mech:{}
+            mech:{},
+            //projectiles
+            swordWave:{
+                name:"swordWave",
+                hp : 10,
+                atk:5,
+                wlkSpd:10,
+                sprites: this.sprites.swordWave,
+                behavior: (self)=>{
+                    self.charPosition.x += self.wlkSpd
+
+                    this.arrayOfMobs.forEach((v,i)=>{
+                        if(v.charPosition.x < self.charPosition.x + 32 && v.charPosition.x+32 > self.charPosition.x){//x works fine
+                            //console.log("x hit")
+                            if(v.charPosition.y < self.charPosition.y + 128 && v.charPosition.y+128 > self.charPosition.y){
+                                //console.log("y hit")
+                                v.hp -= self.atk
+                                //console.log(v.hp)
+                                v.charPosition.x += 25
+                                self.hp -= 2
+                                this.setState({"mobBeingHit":v})
+                            }
+                            //not colliding
+                        }
+                    })
+                    self.hp -= 1
+                    //console.log(self.hp)
+                    //destroying the wave will be handled by the cleardeadmob() function
+
+                },
+            },
+
         }
+
+        this.levels=[
+            [{mob:"greenBoi",posX:200,posY:200}], //this will not spawn due to lvl 0
+            [{mob:"greenBoi",posX:200,posY:200}], //each of these array contain the mobs to be spawn when player enter a new room
+            [{mob:"greenBoi",posX:200,posY:200},{mob:"greenBoi",posX:200,posY:200}],
+            [{mob:"greenBoi",posX:200,posY:200},{mob:"greenBoi",posX:200,posY:300},{mob:"greenBoi",posX:200,posY:100}],
+
+        ]
 
         //set char appearance
         this.mainCharStat.appearance.sprite = this.sprites.charWalk.img
@@ -165,12 +211,16 @@ export default class GameCanvas extends Component{
 
                 downJ : false,
                 downK : false,
+                downL : false,
             },
+            currentLevel:0,
+            levelCompleted:false,
             wound : new Image(),
-            woundDisappearCd: 0,
+            arrow : new Image()
 
         }
         this.otherVar.wound.src = "../../../pictures/wound.png"
+        this.otherVar.arrow.src = "../../../pictures/arrow.png"
 
         //-------methods-----------------
         this.setSpriteForWalking = ()=>{
@@ -270,6 +320,21 @@ export default class GameCanvas extends Component{
             }else if(this.otherVar.boardKeyState.downK === true){
                 this.playSprite("charBlock","mainCharStat")
                 
+            }else if(this.otherVar.boardKeyState.downL === true){
+                this.playSprite("charAtk2","mainCharStat")
+                
+                if(this.state.charMp>=50 && this.mainCharStat.stat.Lcharge === 0){
+                    this.setState({"charMp":this.state.charMp - 50}) 
+                    this.mainCharStat.stat.Lcharge += 1
+                }
+                if(this.state.charMp > 3 && this.mainCharStat.stat.Lcharge >= 1){
+                    this.mainCharStat.stat.Lcharge += 1 //charge up atk (check for Lkey = false and Lcharge value)
+                    this.setState({"charMp":this.state.charMp - 3})
+                }
+                
+
+                //console.log(this.mainCharStat.stat.Lcharge)
+
             }else{
 
                 if (this.otherVar.boardKeyState.downW === true){
@@ -316,6 +381,23 @@ export default class GameCanvas extends Component{
             this.arrayOfMobs.forEach((v,i)=>{
                 v.behavior(v)
             })
+
+            this.arrayOfProjectiles.forEach((v,i)=>{
+                v.behavior(v)
+            })
+        }
+
+        this.appendProjectile = (canvasContex)=>{
+            this.arrayOfProjectiles.forEach((v,i)=>{
+                canvasContex.drawImage(
+                    v.appearance.sprite.img,   
+                    v.charPosition.x,    
+                    v.charPosition.y,    
+                    128,    
+                    128,     
+                    )
+                //console.log(v)
+            })
         }
 
         this.showHitBox = (ctx)=>{ //will crash if you kill a mob, there isnt a null check
@@ -348,9 +430,12 @@ export default class GameCanvas extends Component{
 
                         //restore block capablitiy
                         if(this.state.charDef <3){
-                            this.setState({"charDef":this.state.charDef+=1})
+                            this.setState({"charDef":this.state.charDef+1})
                         }
 
+                        if(this.state.charMp < 250){ //recover mp when attacking
+                            this.setState({"charMp":this.state.charMp+5})
+                        }
                         this.setState({"mobBeingHit":v})
                         console.log(this.state.mobBeingHit)
                     }
@@ -371,11 +456,49 @@ export default class GameCanvas extends Component{
                     }
                 }
             })
+
+            this.arrayOfProjectiles.forEach((v,i)=>{
+                if (v.hp < 0){
+                    this.arrayOfProjectiles.splice(i,1)
+                }
+            })
+
+            if(!this.otherVar.levelCompleted && this.arrayOfMobs.length===0){
+                this.otherVar.levelCompleted = true
+
+            }//next level avaliable
+
+        }
+
+        this.nextLevel=()=>{
+            if(this.mainCharStat.charPosition.x > 700-128 && this.mainCharStat.charPosition.x < 700){//x works fine
+                if(this.mainCharStat.charPosition.y < 250 + 32 && this.mainCharStat.charPosition.y > 250-32){
+                    //console.log("gg") move to next level
+
+                    this.otherVar.currentLevel += 1
+                    this.otherVar.levelCompleted = false
+                    this.mainCharStat.charPosition.x = 0
+                    this.mainCharStat.charPosition.y = 250
+
+                    //spawn mobs
+
+                    if(this.otherVar.currentLevel < this.levels.length){
+                        this.levels[this.otherVar.currentLevel].forEach((v,i)=>{
+                            this.MakeMob(v.mob,v.posX,v.posY)
+                        })
+                    }else{
+                        alert("um, so like you finished all the levels, and like I'm like lazy, look here oldsport I took AP chem today, and Im not sure If is submitted correctly, so pardon my alert(), setting you back to level 0 please stand by...")
+                        this.otherVar.currentLevel = 0
+                        this.nextLevel()
+                    }
+
+                }
+            }
         }
 
         this.checkForMobDie = ()=>{}
         //--------Mob constructor------------
-        this.MakemMob = (mobType,spawnX,spawnY)=>{
+        this.MakeMob = (mobType,spawnX,spawnY)=>{
             let mob = {}
             mob.name = mobType
             mob.maxHp = this.mobStat[mobType].hp
@@ -409,6 +532,33 @@ export default class GameCanvas extends Component{
             console.log(this.arrayOfMobs)
         }
 
+        this.makeProjectile = (mobType,spawnX,spawnY)=>{ //yes. mobtype, its stored in mobstat
+            let Projectile = {}
+            Projectile.hp = this.mobStat[mobType].hp
+            Projectile.name = mobType
+            Projectile.atk = this.mobStat[mobType].atk
+            Projectile.wlkSpd = this.mobStat[mobType].wlkSpd
+
+            Projectile.sprites = this.mobStat[mobType].sprites
+
+            Projectile.charPosition = {}
+            Projectile.charPosition.x = spawnX
+            Projectile.charPosition.y = spawnY
+            Projectile.charPosition.flip = false
+        
+            Projectile.appearance = {}
+            Projectile.appearance.sprite = Projectile.sprites
+            Projectile.behavior = this.mobStat[mobType].behavior
+
+            //exceptions
+            if(mobType="swordWave"){
+                Projectile.hp += Math.floor(this.mainCharStat.stat.Lcharge*1)
+                this.mainCharStat.stat.Lcharge = 0
+            }
+
+            this.arrayOfProjectiles.push(Projectile)
+        }
+
         //-------------------------
         let contx
 
@@ -420,7 +570,7 @@ export default class GameCanvas extends Component{
             this.myRef.current.height = 500//700
             this.myRef.current.width = 700//900
 
-            this.MakemMob("greenBoi",200,200)
+            //this.MakeMob("greenBoi",200,200)
         }
 
         setInterval(()=>{ //<------stuff are done here, since this is what redraws the canvas every so often
@@ -431,7 +581,19 @@ export default class GameCanvas extends Component{
 
                 //console.log(contx)
 
-                contx.drawImage(
+                if(this.otherVar.levelCompleted){ //show arrow move to next level
+                    contx.drawImage(
+                        this.otherVar.arrow,    //image
+                        700-128,
+                        250,
+                        128,
+                        128
+                        )
+                        this.nextLevel()
+
+                }
+
+                contx.drawImage( //draws player
                     this.mainCharStat.appearance.sprite,    //image
                     (this.mainCharStat.appearance.frame % this.mainCharStat.appearance.totalFrame)*128,  //sx
                     0*128,  //sy
@@ -443,7 +605,16 @@ export default class GameCanvas extends Component{
                     128     //height
                     )
                 
+                //makeSwordWave
+                if (this.mainCharStat.stat.Lcharge > 0 && this.otherVar.boardKeyState.downL === false){
+                    //biu biu biu
+                    this.makeProjectile("swordWave",this.mainCharStat.charPosition.x,this.mainCharStat.charPosition.y)
+                    this.mainCharStat.stat.Lcharge = 0
 
+                    console.log("created wave"+this.mainCharStat.stat.Lcharge)
+                }
+
+                this.appendProjectile(contx)
                 this.appendMob(contx) //move mob moves the mob
                 this.moveMobs() //is in charge mob behavior, doesn't move the mob
                 this.moveChar(contx) //moves charactor
@@ -452,6 +623,11 @@ export default class GameCanvas extends Component{
 
                 //this.showHitBox(contx)
 
+                if (this.state.charHp <= 0){
+                    this.mainCharStat.wlkSpd = 0
+                    this.mainCharStat.appearance.sprite=this.sprites.charDied.img
+                    this.mainCharStat.appearance.totalFrame=this.sprites.charDied.totalFrame
+                }
 
                 this.clearDeadMob()
                 this.otherVar.gameTime += 1
