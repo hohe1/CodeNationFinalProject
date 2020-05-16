@@ -75,9 +75,15 @@ export default class GameCanvas extends Component{
             charDied : {img: new Image(),totalFrame: 1},
             //projectiles
             swordWave:{img: new Image(),totalFrame: 1},
+            blade:{img: new Image(),totalFrame: 1},
             //mob sprties
             greenBoiWalk:{img: new Image(),totalFrame: 4,},
             greenBoiAtk:{img: new Image(),totalFrame: 7,},
+
+            madManAtk1:{img: new Image(),totalFrame: 6},
+            madManSkill1:{img: new Image(),totalFrame: 6},
+            madManSkill2:{img: new Image(),totalFrame: 4},
+            madmanWalk:{img: new Image(),totalFrame: 2}
 
         }
         this.sprites.charWalk.img.src = "../../../pictures/walkSprite.png" //set the src of the img initialized ^
@@ -88,16 +94,22 @@ export default class GameCanvas extends Component{
         this.sprites.charDied.img.src = "../../../pictures/mainChar_Died.png"
 
         this.sprites.swordWave.img.src = "../../../pictures/swordWave.png"
+        this.sprites.blade.img.src = "../../../pictures/madman_blade.png"
 
         this.sprites.greenBoiWalk.img.src = "../../../pictures/walkSprite2.png"
         this.sprites.greenBoiAtk.img.src = "../../../pictures/GreenAtk1Sprite.png"
 
+        this.sprites.madManAtk1.img.src = "../../../pictures/madman_atk.png"
+        this.sprites.madManSkill1.img.src = "../../../pictures/madman_skill.png"
+        this.sprites.madManSkill2.img.src = "../../../pictures/madman_skill2.png"
+        this.sprites.madmanWalk.img.src = "../../../pictures/madman_walk.png"
 
         this.mobStat = { //spawn mobs using these stats
             greenBoi:{
                 hp:250,
                 atk:10,
                 wlkSpd:5,
+                knockResistance:0,
                 skills:[],
                 isAttking: false,
                 cd: 14,
@@ -153,7 +165,152 @@ export default class GameCanvas extends Component{
                 },
                 
             },
+
+            madMan:{
+                hp:666,
+                atk:66,
+                wlkSpd:10,
+                knockResistance:0,
+                skills:[],
+                isAttking: false,
+                cd: 10,
+                sprites:{
+                    walk: this.sprites.madmanWalk, //need to do walk.img to get the img.
+                    attack:null,
+                },
+                behavior: (self)=>{
+                    let mode
+                    if(self.hp/self.maxHp >= .7){
+                        mode = "rush"
+                    }else if(self.hp/self.maxHp >= .5){
+                        mode = "jump"
+                    }else if(self.hp/self.maxHp >= .2){
+                        self.knockResistance = 100 //prevent knock back
+                        self.wlkSpd = 0
+                        mode = "throw"
+                    }else if(self.hp/self.maxHp >= 0){
+                        self.sprites.walk = this.sprites.madManSkill2
+                        self.wlkSpd = 3
+                        self.cd = 0
+                        mode = "rush"
+                    }
+
+                    //when madman have >80% hp: rushes player
+                    switch(mode){
+                        case "rush":
+                            if(self.charPosition.x <= this.mainCharStat.charPosition.x + 50 && self.charPosition.x+50 >= this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
+                                if(self.charPosition.y <= this.mainCharStat.charPosition.y + 30 && self.charPosition.y+30 >= this.mainCharStat.charPosition.y){  //need to change mobwalksprite so he will get close enough
+                                    this.mobSpritePlay(self,"madManAtk1") //attack begin
+
+                                    if(!self.isAttking && self.atkCd === 0 && self.appearance.frame%self.appearance.totalFrame === 2){ //only attaks once per animation
+                                        if(this.otherVar.boardKeyState.downK && this.state.charDef > 0){ // if player is holding down k key, aka if blocking
+                                            this.setState({"charDef": this.state.charDef - 1 })  //player blocked attack
+                                        }else{
+                                            this.setState({"charHp": this.state.charHp - self.atk })  //player gets hurt
+                                        }
+                                        self.isAttking = true
+                                        self.atkCd = self.cd
+                                    }
+                                        
+                                }else{
+                                    //still not in range, walk
+                                    this.mobWalkSprite(self,49)
+                                }
+                            }else{
+                            //else not in range. Start walking
+                            this.mobWalkSprite(self,49)
+                            }
+                        break;
+
+                        case "jump":
+                            if(self.charPosition.x <= this.mainCharStat.charPosition.x + 50 && self.charPosition.x+50 >= this.mainCharStat.charPosition.x){//x works fine  //changed to 100 so mob walk closer, sheet 128^2 
+                                if(self.charPosition.y <= this.mainCharStat.charPosition.y + 30 && self.charPosition.y+30 >= this.mainCharStat.charPosition.y){  //need to change mobwalksprite so he will get close enough
+                                    this.mobSpritePlay(self,"madManAtk1") //attack begin
+
+                                    if(!self.isAttking && self.atkCd === 0 && self.appearance.frame%self.appearance.totalFrame === 2){ //only attaks once per animation
+                                        if(this.otherVar.boardKeyState.downK && this.state.charDef > 0){ // if player is holding down k key, aka if blocking
+                                            this.setState({"charDef": this.state.charDef - 1 })  //player blocked attack
+                                        }else{
+                                            this.setState({"charHp": this.state.charHp - self.atk })  //player gets hurt
+                                        }
+                                        self.isAttking = true
+                                        self.atkCd = self.cd
+                                    }  
+                                        
+                                }
+
+                            }else{
+                            //else not in range. Start jumping
+                                if(self.hasJumped === "finished"){
+                                    this.mobWalkSprite(self,49)
+
+                                    if(Math.random() > 0.7){
+                                        self.hasJumped = false
+                                    }
+                                }
+
+                                if(self.charPosition.y>-200 && self.atkCd<=0 && self.hasJumped===false){ //jumps off screen
+                                    self.charPosition.y-=self.wlkSpd*8
+                                }else if(self.charPosition.y<=-200 && self.hasJumped===false){  //reached y = -200, start faillinf
+                                    self.hasJumped = true
+                                    self.charPosition.x = this.mainCharStat.charPosition.x
+                                }
+                                //console.log(self.hasJumped)
+                            }
+
+                            if(self.charPosition.x<500 && self.atkCd>0){ //runs away after hitting
+                                self.charPosition.x+=self.wlkSpd*5
+                            }
+
+                            if(self.hasJumped === true && self.atkCd<=0 && self.charPosition.y < this.mainCharStat.charPosition.y){ //if not reach player y, keep failling
+                                self.charPosition.y+=self.wlkSpd*5
+                                //console.log(self.charPosition.y ,  this.mainCharStat.charPosition.y)
+                            }else if(self.hasJumped === true && self.atkCd<=0 && self.charPosition.y >= this.mainCharStat.charPosition.y){ //landed
+                                self.hasJumped = "finished"
+                                this.mobWalkSprite(self,49)
+                            }
+                        break;
+                        
+                        case "throw":
+                            if(self.charPosition.y<300){ //runs to side of screen
+                                self.charPosition.y += 3
+                            }
+                            if(self.charPosition.x<500){ //runs to side of screen
+                                self.charPosition.x += 3
+                            }
+
+                            //attack begin
+
+                            if(self.atkCd === 0){
+                                this.mobSpritePlay(self,"madManSkill2")
+                                if(self.appearance.frame%self.appearance.totalFrame === 3){
+                                    this.makeProjectile("blade",
+                                    self.charPosition.x + -20+Math.floor(Math.random()*40),
+                                    self.charPosition.y-5)
+                                    self.atkCd = self.cd
+                                }
+                            }
+                        break;
+
+                    }
+                     //wait for cd
+                     if(self.atkCd > 0){
+                        self.atkCd -= 1
+                        if (self.appearance.frame % self.appearance.totalFrame === 0 && mode !=="throw"){
+                            self.appearance.frame = 0 //when there is atkcd animation will not play
+                            this.mobWalkSprite(self,49)
+                        }
+                    }
+                    //reset isAttacking
+                    if(self.appearance.frame % self.appearance.totalFrame === 0){
+                        self.isAttking = false
+                    }
+                }
+
+            },
+
             mech:{},
+            
             //projectiles
             swordWave:{
                 name:"swordWave",
@@ -171,7 +328,10 @@ export default class GameCanvas extends Component{
                                 //console.log("y hit")
                                 v.hp -= self.atk
                                 //console.log(v.hp)
-                                v.charPosition.x += 25
+                                if(v.knockResistance < 25){
+                                    v.charPosition.x += 25
+                                }
+
                                 self.hp -= 2
                                 this.setState({"mobBeingHit":v})
                             }
@@ -185,13 +345,40 @@ export default class GameCanvas extends Component{
                 },
             },
 
+            blade:{
+                name:"swordWave",
+                hp : 15,
+                atk:66,
+                wlkSpd:20,
+                sprites: this.sprites.blade,
+                behavior: (self)=>{
+                    self.charPosition.x -= self.wlkSpd
+                    self.hp -= 1
+
+                    if(self.charPosition.x <= this.mainCharStat.charPosition.x + 50 && self.charPosition.x+50 >= this.mainCharStat.charPosition.x){
+                        if(self.charPosition.y <= this.mainCharStat.charPosition.y + 30 && self.charPosition.y+30 >= this.mainCharStat.charPosition.y){
+                            if(this.otherVar.boardKeyState.downK && this.state.charDef > 0){ 
+                                this.setState({"charDef": this.state.charDef - 1 })  //player blocked attack
+                                self.hp = 0    
+                            }else{
+                                this.setState({"charHp": this.state.charHp - self.atk })  //player gets hurt
+                                self.hp = 0    
+                            }
+                        }
+                    }
+                    //console.log(self.hp)
+                }
+            }
+
         }
 
         this.levels=[
-            [{mob:"greenBoi",posX:200,posY:200}], //this will not spawn due to lvl 0
-            [{mob:"greenBoi",posX:200,posY:200}], //each of these array contain the mobs to be spawn when player enter a new room
-            [{mob:"greenBoi",posX:200,posY:200},{mob:"greenBoi",posX:200,posY:200}],
+            [{mob:"greenBoi",posX:0,posY:400}], //this will not spawn due to lvl 0
+            
+            [{mob:"greenBoi",posX:200,posY:200}],
             [{mob:"greenBoi",posX:200,posY:200},{mob:"greenBoi",posX:200,posY:300},{mob:"greenBoi",posX:200,posY:100}],
+            [{mob:"madMan",posX:0,posY:400}], //each of these array contain the mobs to be spawn when player enter a new room
+            [{mob:"greenBoi",posX:100,posY:100},{mob:"greenBoi",posX:200,posY:200},{mob:"greenBoi",posX:300,posY:300},{mob:"greenBoi",posX:400,posY:400},{mob:"greenBoi",posX:500,posY:500}]
 
         ]
 
@@ -418,7 +605,10 @@ export default class GameCanvas extends Component{
                         //console.log("y hit")
                         v.hp -= this.mainCharStat.stat.atk
                         //console.log(v.hp)
-                        v.charPosition.x += this.mainCharStat.stat.knockBack
+
+                        if(v.knockResistance < this.mainCharStat.stat.knockBack){
+                            v.charPosition.x += this.mainCharStat.stat.knockBack - v.knockResistance
+                        }
 
                        
                         contex.drawImage(this.otherVar.wound,
@@ -448,7 +638,7 @@ export default class GameCanvas extends Component{
 
         this.clearDeadMob = () => {
             this.arrayOfMobs.forEach((v,i)=>{
-                if (v.hp < 0){
+                if (v.hp <= 0){
                     this.arrayOfMobs.splice(i,1)
                     
                     if(this.state.mobBeingHit === v){
@@ -458,7 +648,7 @@ export default class GameCanvas extends Component{
             })
 
             this.arrayOfProjectiles.forEach((v,i)=>{
-                if (v.hp < 0){
+                if (v.hp <= 0){
                     this.arrayOfProjectiles.splice(i,1)
                 }
             })
@@ -479,7 +669,7 @@ export default class GameCanvas extends Component{
                     this.otherVar.levelCompleted = false
                     this.mainCharStat.charPosition.x = 0
                     this.mainCharStat.charPosition.y = 250
-
+                    this.arrayOfProjectiles = []
                     //spawn mobs
 
                     if(this.otherVar.currentLevel < this.levels.length){
@@ -506,6 +696,7 @@ export default class GameCanvas extends Component{
             mob.atk = this.mobStat[mobType].atk
             mob.wlkSpd = this.mobStat[mobType].wlkSpd
             mob.skills = this.mobStat[mobType].skills
+            mob.knockResistance = this.mobStat[mobType].knockResistance
             mob.cd = this.mobStat[mobType].cd
             mob.atkCd = 0
 
@@ -526,6 +717,11 @@ export default class GameCanvas extends Component{
 
             mob.behavior = this.mobStat[mobType].behavior
             
+            //exceptions
+            if(mobType==="madMan"){
+                mob.hasJumped = false
+            }
+
             // console.log(mob)
             //push mob in the array that stores mobs
             this.arrayOfMobs.push(mob)
@@ -551,7 +747,7 @@ export default class GameCanvas extends Component{
             Projectile.behavior = this.mobStat[mobType].behavior
 
             //exceptions
-            if(mobType="swordWave"){
+            if(mobType==="swordWave"){
                 Projectile.hp += Math.floor(this.mainCharStat.stat.Lcharge*1)
                 this.mainCharStat.stat.Lcharge = 0
             }
@@ -611,7 +807,7 @@ export default class GameCanvas extends Component{
                     this.makeProjectile("swordWave",this.mainCharStat.charPosition.x,this.mainCharStat.charPosition.y)
                     this.mainCharStat.stat.Lcharge = 0
 
-                    console.log("created wave"+this.mainCharStat.stat.Lcharge)
+                    //console.log("created wave"+this.mainCharStat.stat.Lcharge)
                 }
 
                 this.appendProjectile(contx)
@@ -622,6 +818,7 @@ export default class GameCanvas extends Component{
                 this.checkForReset("mainCharStat") // check if the animation should reset to default animation
 
                 //this.showHitBox(contx)
+                //console.log(this.state.charHp, this.mainCharStat.stat.maxhp)
 
                 if (this.state.charHp <= 0){
                     this.mainCharStat.wlkSpd = 0

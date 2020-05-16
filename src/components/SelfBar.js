@@ -16,6 +16,13 @@ export default class SelfBar extends Component{
             let mpWidth = this.props.mp / this.props.mmp
             let toPercentMp = mpWidth*100 + "%"
 
+            if(this.props.hp  < 0){
+                toPercentHp = 0
+            }
+            if(this.props.mp  < 0){
+                toPercentMp = 0
+            }
+
             let defArr = []
             for(let i=0;i<this.props.def;i++){
                 defArr.push(<div className="def" key={i+"def"}></div>)
