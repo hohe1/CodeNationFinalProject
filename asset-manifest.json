@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/CodeNationFinalProject/static/css/main.bb7f90d7.chunk.css",
+    "main.js": "/CodeNationFinalProject/static/js/main.5bf54bdb.chunk.js",
+    "main.js.map": "/CodeNationFinalProject/static/js/main.5bf54bdb.chunk.js.map",
+    "runtime-main.js": "/CodeNationFinalProject/static/js/runtime-main.d9bec0e9.js",
+    "runtime-main.js.map": "/CodeNationFinalProject/static/js/runtime-main.d9bec0e9.js.map",
+    "static/js/2.f4701478.chunk.js": "/CodeNationFinalProject/static/js/2.f4701478.chunk.js",
+    "static/js/2.f4701478.chunk.js.map": "/CodeNationFinalProject/static/js/2.f4701478.chunk.js.map",
+    "index.html": "/CodeNationFinalProject/index.html",
+    "precache-manifest.7781664556865dd327dd35c75d1623b6.js": "/CodeNationFinalProject/precache-manifest.7781664556865dd327dd35c75d1623b6.js",
+    "service-worker.js": "/CodeNationFinalProject/service-worker.js",
+    "static/css/main.bb7f90d7.chunk.css.map": "/CodeNationFinalProject/static/css/main.bb7f90d7.chunk.css.map",
+    "static/js/2.f4701478.chunk.js.LICENSE.txt": "/CodeNationFinalProject/static/js/2.f4701478.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.d9bec0e9.js",
+    "static/js/2.f4701478.chunk.js",
+    "static/css/main.bb7f90d7.chunk.css",
+    "static/js/main.5bf54bdb.chunk.js"
+  ]
+}
